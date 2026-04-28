@@ -1,4 +1,4 @@
-``/ (root)
+/ (root)
 │
 ├── _config.yml
 ├── Gemfile
@@ -62,4 +62,4 @@
 │   ├── contact.html
 │   ├── dmca.html
 │
-└── robots.txt``
+└── robots.txt
