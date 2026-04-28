@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Extractor</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    background: #121212;
+    color: #fff;
+}
+
+.panel {
+    padding: 10px;
+    background: #000;
+    position: sticky;
+    top: 0;
+}
+
+textarea {
+    width: 100%;
+    height: 120px;
+    background: #111;
+    color: #fff;
+    border: 1px solid #333;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    background: #cc0000;
+    color: white;
+    border: none;
+}
+
+.reader {
+    max-width: 700px;
+    margin: auto;
+    padding: 20px;
+}
+
+.reader img {
+    width: 100%;
+    margin: 20px 0;
+}
+
+.copy-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #cc0000;
+    padding: 12px;
+    border-radius: 8px;
+    display: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="panel">
+<textarea id="input" placeholder="Paste HTML here..."></textarea>
+<button onclick="render()">Extract</button>
+</div>
+
+<div id="reader" class="reader"></div>
+<div id="copyBtn" class="copy-btn" onclick="copyText()">Copy</div>
+
+<script>
+let selectedText = "";
+
+/* ===== FIND MAIN CONTENT ===== */
+function findMainContent(doc){
+    let selectors = ["article","main",".entry-content",".post-content",".content","#content"];
+
+    for(let sel of selectors){
+        let el = doc.querySelector(sel);
+        if(el && el.innerText.length > 200){
+            return el;
+        }
+    }
+    return doc.body;
+}
+
+/* ===== CLEAN JUNK ===== */
+function cleanJunk(container){
+    container.querySelectorAll(
+        "script, style, noscript, header, footer, nav, aside, iframe, form, button"
+    ).forEach(el => el.remove());
+
+    container.querySelectorAll(
+        ".sidebar, .ads, .advertisement, .comments, .footer, .menu"
+    ).forEach(el => el.remove());
+}
+
+/* ===== SAFE HIDDEN FILTER ===== */
+function cleanHidden(container){
+    container.querySelectorAll("*").forEach(el => {
+
+        if(el.hasAttribute("hidden")){
+            el.remove();
+            return;
+        }
+
+        let style = el.getAttribute("style");
+        if(style){
+            let s = style.toLowerCase();
+
+            if(
+                s.includes("display:none") ||
+                s.includes("visibility:hidden") ||
+                s.includes("opacity:0")
+            ){
+                el.remove();
+            }
+        }
+
+        let cls = (el.className || "").toLowerCase();
+        if(
+            cls.includes("hidden") ||
+            cls.includes("sr-only") ||
+            cls.includes("visually-hidden")
+        ){
+            el.remove();
+        }
+    });
+}
+
+/* ===== FIX IMAGES ===== */
+function fixImages(container){
+    container.querySelectorAll("img").forEach(img => {
+        let src =
+            img.getAttribute("src") ||
+            img.getAttribute("data-src") ||
+            img.getAttribute("data-lazy-src") ||
+            img.getAttribute("data-original");
+
+        if(src){
+            img.src = src;
+        }
+    });
+}
+
+/* ===== MAIN ===== */
+function render(){
+    let raw = document.getElementById("input").value;
+
+    let doc = new DOMParser().parseFromString(raw, "text/html");
+
+    let content = findMainContent(doc).cloneNode(true);
+
+    cleanJunk(content);
+    cleanHidden(content);
+    fixImages(content);
+
+    document.getElementById("reader").innerHTML = content.innerHTML;
+}
+
+/* ===== COPY ===== */
+document.addEventListener("mouseup", saveSelection);
+document.addEventListener("touchend", saveSelection);
+
+function saveSelection(){
+    let sel = window.getSelection().toString().trim();
+    if(sel){
+        selectedText = sel;
+        document.getElementById("copyBtn").style.display = "block";
+    }
+}
+
+function copyText(){
+    if(!selectedText) return;
+    navigator.clipboard.writeText(selectedText);
+    selectedText = "";
+    document.getElementById("copyBtn").style.display = "none";
+}
+</script>
+
+</body>
+</html>
