@@ -1,3 +1,4 @@
+```id="tree"
 / (root)
 │
 ├── _config.yml
@@ -63,3 +64,4 @@
 │   ├── dmca.html
 │
 └── robots.txt
+```
